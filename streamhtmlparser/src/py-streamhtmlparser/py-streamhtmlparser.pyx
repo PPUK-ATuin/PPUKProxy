@@ -3,7 +3,7 @@
 # This implementation is simpler because of the easy integration with C
 # code Cython offers. 
 cimport streamhtmlparser
-from libc.stdlib cimport malloc, free
+from stdlib cimport malloc, free
 
 cdef class HtmlParser:
 	cdef streamhtmlparser.htmlparser_ctx *parser
