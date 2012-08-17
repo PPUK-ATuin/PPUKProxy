@@ -165,10 +165,16 @@ class ProxyHandler(BaseHTTPRequestHandler):
 			try:
 				# Create connection object, connect to upstream server and
 				# *ugly hack* set the underlying socket's timeout
-				if self.is_ssl():
-					c = httplib.HTTPSConnection(self.remote_host, timeout=self.server.config.upstream_connect_timeout)
+				if self.server.config.upstream_proxy_address and self.server.config.upstream_proxy_port:
+					if self.is_ssl():
+						c = httplib.HTTPSConnection(self.server.config.upstream_proxy_address, self.server.config.upstream_proxy_port, timeout=self.server.config.upstream_connect_timeout)
+					else:
+						c = httplib.HTTPConnection(self.server.config.upstream_proxy_address, self.server.config.upstream_proxy_port, timeout=self.server.config.upstream_connect_timeout)
 				else:
-					c = httplib.HTTPConnection(self.remote_host, timeout=self.server.config.upstream_connect_timeout)
+					if self.is_ssl():
+						c = httplib.HTTPSConnection(self.remote_host, timeout=self.server.config.upstream_connect_timeout)
+					else:
+						c = httplib.HTTPConnection(self.remote_host, timeout=self.server.config.upstream_connect_timeout)
 				c.connect()
 				c.sock.settimeout(self.server.config.upstream_timeout)
 			except Exception, e:
@@ -207,7 +213,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
 			if self.server.config.gzip_server_response:
 				req_headers['Accept-Encoding']='gzip'
 			req_headers['Connection'] = 'close'
-			req = c.request(method, self.path, self.data, req_headers)
+			if self.server.config.upstream_proxy_address and self.server.config.upstream_proxy_port:
+				if self.is_ssl():
+					req = c.request(method, "https://"+self.remote_host+self.path, self.data, req_headers)
+				else:
+					req = c.request(method, "http://"+self.remote_host+self.path, self.data, req_headers)
+			else:
+				req = c.request(method, self.path, self.data, req_headers)
 			resp = c.getresponse()
 
 			# Handle redirects correctly
@@ -514,7 +526,10 @@ class ProxyHandler(BaseHTTPRequestHandler):
 		except Exception, e:
 			self.my_log_request(404, 0)
 			self.send_error(404)
-			f.close()
+			try:
+				f.close()
+			except UnboundLocalError, e:
+				pass
 			return
 
 		content_type = mimetypes.guess_type(fn, False)[0] or 'application/octet-stream'
