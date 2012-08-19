@@ -703,6 +703,8 @@ class Config:
 		self.http_listen_port = 0
 		self.https_listen_port = 0
 		self.https_certificate = None
+		self.upstream_proxy_address = None
+		self.upstream_proxy_port = 0
 		self.max_page_size = 5242880
 		self.max_post_size = 1048576
 		self.upstream_timeout=30
@@ -762,6 +764,8 @@ class Config:
 			self.http_port = conf.getint('global', 'http_port')
 			self.https_port = conf.getint('global', 'https_port')
 			self.https_certificate = conf.get('global','https_certificate')
+			self.upstream_proxy_address = conf.get('global','upstream_proxy_address')
+			self.upstream_proxy_port = conf.getint('global','upstream_proxy_port')
 			self.max_page_size = conf.getint('global', 'max_page_size')
 			self.max_post_size = conf.getint('global', 'max_post_size')
 			self.upstream_timeout=conf.getint('global', 'upstream_timeout')
