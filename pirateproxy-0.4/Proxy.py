@@ -24,6 +24,7 @@ import IPy
 import mimetypes
 import gc
 import zlib
+import base64
 from gzip import GzipFile
 from StringIO import StringIO
 from multiprocessing import Pipe
@@ -118,6 +119,11 @@ class ProxyHandler(BaseHTTPRequestHandler):
 			p = host.find("."+self.server.config.hostname)
 			if p != -1:
 				self.remote_host = host[:p]
+				try:
+					self.remote_host = base64.b32decode(host[:p].upper().replace('_', '='))
+					self.magic=True;
+				except TypeError:
+					pass
 			else:
 				self.remote_host = host
 		
@@ -139,7 +145,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 		# loops
 		if self.is_disallowed(self.remote_host):
 			self.my_log_request(403, 0)
-			self.send_error(403, "Access denied")
+			self.send_error(403, "Access denied "+self.remote_host)
 			return
 
 		if post:
@@ -272,6 +278,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
 				if domain:
 					# Need to strip as sometimes at least ',' is retained
 					domain = domain.strip(' \t\r\n,;')
+					if self.magic is True:
+						domain =  base64.b32encode(domain).lower().replace("=","_")
 					domain = domain + "." + self.server.config.hostname
 					c[cookiename]['domain'] = domain
 			cookie = c.output()
