@@ -18,12 +18,13 @@ class Page(HtmlParser):
 	simple_attriburl_regex = re.compile(r"((https?:)//[^ \r\n<]+)", re.I|re.M|re.S)
 	counter = 0
 
-	def __init__(self, config, ssl, reader, writer):
+	def __init__(self, config, ssl, reader, writer, magic):
 		HtmlParser.__init__(self)
 		self.config = config
 		self.ssl = ssl
 		self.reader = reader
 		self.writer = writer
+		self.magic = magic
 		self.input_buffer = ''
 		self.output_buffer = ''
 		self.state = -1
@@ -41,7 +42,7 @@ class Page(HtmlParser):
 
 	# Rewrite a matched URL attribute value snippet
 	def rewrite_url(self, m):
-		return Util.rewrite_URL(m.group(0), self.config, self.ssl)
+		return Util.rewrite_URL(m.group(0), self.config, self.ssl, self.magic)
 
 	def rewrite(self):
 		while True:
@@ -74,9 +75,9 @@ class Page(HtmlParser):
 		# or CSS data anymore. This is all handled in the JSPage and
 		# CSSPage classes.
 		if self.tag() == 'script':
-			p = JSPage(self.config, self.ssl, self.parsing_reader, self.buffered_writer)
+			p = JSPage(self.config, self.ssl, self.parsing_reader, self.buffered_writer, self.magic)
 		elif self.tag() == 'style':
-			p = CSSPage(self.config, self.ssl, self.parsing_reader, self.buffered_writer)
+			p = CSSPage(self.config, self.ssl, self.parsing_reader, self.buffered_writer, self.magic)
 		p.rewrite()
 
 
@@ -136,7 +137,7 @@ class Page(HtmlParser):
 			# this by using StringIO on the already read value
 			f = StringIO(self.input_buffer[:pos])
 			outf = StringIO()
-			p = CSSPage(self.config, self.ssl, f.read, outf.write)
+			p = CSSPage(self.config, self.ssl, f.read, outf.write, self.magic)
 			p.rewrite()
 			outf.seek(0)
 			self.output_buffer += outf.read()
@@ -148,7 +149,7 @@ class Page(HtmlParser):
 			# this by using StringIO on the already read value
 			f = StringIO(self.input_buffer[:pos])
 			outf = StringIO()
-			p = JSPage(self.config, self.ssl, f.read, outf.write)
+			p = JSPage(self.config, self.ssl, f.read, outf.write,self.magic)
 			p.rewrite()
 			outf.seek(0)
 			self.output_buffer += outf.read() + self.input_buffer[pos]

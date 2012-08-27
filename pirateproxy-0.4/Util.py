@@ -23,7 +23,7 @@ def rewrite_URL_strip(url, config):
 # Rewrite the URL and add the proxy's HTTP or HTTPS ports when necessary.
 # For absolute URLs without scheme, use the same scheme as used to access
 # the proxy (using the 'ssl' flag)
-def rewrite_URL(url, config, ssl):
+def rewrite_URL(url, config, ssl, magic=False):
 	try: 
 		# Strip our own hostname for the rewrites to work
 		url = rewrite_URL_strip(url,config)
@@ -70,6 +70,9 @@ def rewrite_URL(url, config, ssl):
 				port = config.http_port
 			elif newres[0] == 'https':
 				port = config.https_port
+
+			if magic is True:
+				host = base64.b32encode(host).lower().replace("=","_")
 
 			newres[1] = host + "." + config.hostname + ":" + str(port)
 			url = urlparse.urlunsplit(newres) 

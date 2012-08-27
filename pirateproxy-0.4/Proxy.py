@@ -66,7 +66,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 		if resp.status >= 300 and resp.status <= 400:
 			location = resp.getheader('location', None)
 			if location:
-				location = Util.rewrite_URL(location, self.server.config, self.is_ssl())
+				location = Util.rewrite_URL(location, self.server.config, self.is_ssl(), self.magic)
 			resp.newlocation = location
 		else:
 			resp.newlocation = None
@@ -119,9 +119,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
 			p = host.find("."+self.server.config.hostname)
 			if p != -1:
 				self.remote_host = host[:p]
+				self.magic=False
 				try:
-					self.remote_host = base64.b32decode(host[:p].upper().replace('_', '='))
-					self.magic=True;
+					padding = "";
+					while len(host[:p]+padding)%4 != 0:
+						padding = padding + "="
+					self.remote_host = base64.b32decode(host[:p].upper() + padding)
+					self.magic=True
 				except TypeError:
 					pass
 			else:
@@ -278,8 +282,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
 				if domain:
 					# Need to strip as sometimes at least ',' is retained
 					domain = domain.strip(' \t\r\n,;')
-					if self.magic is True:
-						domain =  base64.b32encode(domain).lower().replace("=","_")
+#					if self.magic is True:
+#						domain =  base64.b32encode(domain).lower().replace("=","_")
 					domain = domain + "." + self.server.config.hostname
 					c[cookiename]['domain'] = domain
 			cookie = c.output()
@@ -333,7 +337,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 		# are given to the Page, JSPage or CSSPage instance to read blocks
 		# of data from the server response and write blocks of data to the
 		# client. Gzip-handling is done in the reader/writer.
-		p = rewriter_class(self.server.config, self.is_ssl(), self.reader, self.writer)
+		p = rewriter_class(self.server.config, self.is_ssl(), self.reader, self.writer, self.magic)
 		p.rewrite()
 	
 

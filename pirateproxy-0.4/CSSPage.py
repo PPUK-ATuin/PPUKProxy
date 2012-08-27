@@ -6,11 +6,12 @@ import Util
 class CSSPage:
 	BLKSIZE=65536
 
-	def __init__(self, config, ssl, reader, writer):
+	def __init__(self, config, ssl, reader, writer, magic):
 		self.config = config
 		self.ssl = ssl
 		self.reader = reader
 		self.writer = writer
+		self.magic = magic
 		self.input_buffer = ''
 		self.output_buffer = ''
 
